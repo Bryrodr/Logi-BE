@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Twilio;
+using Server_Side.SignalRHubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,9 +16,10 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 builder.Services.AddCors(p => p.AddPolicy("corsapp", builder =>
 {
-    builder.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
+    builder.WithOrigins("http://localhost:3000").AllowAnyMethod().AllowAnyHeader().AllowCredentials();
 }));
 builder.Services.AddDbContext<OrderDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("OrderDb")));
 
@@ -57,7 +59,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("corsapp");
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -72,5 +78,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Order}/{action=Index}/{id?}").RequireAuthorization();
 
+//add signalR to orders
+app.MapHub<OrdersHub>("/ordersHub");
 
 app.Run();

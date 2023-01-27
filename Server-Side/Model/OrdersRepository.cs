@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Server_Side.Interface;
 using Server_Side.Model.Commands;
+using Server_Side.SignalRHubs;
 
 namespace Server_Side.Model
 {
@@ -13,7 +15,9 @@ namespace Server_Side.Model
         {
             _dbContext = dbContext;
             _mapper = mapper;
+
         }
+      
          public async  Task<List<Order>> GetOrdersAsync()
         {
                 return await _dbContext.Orders.ToListAsync();
@@ -30,6 +34,7 @@ namespace Server_Side.Model
             _mapper.Map(command, order);
             _dbContext.Orders.Add(order);
             await _dbContext.SaveChangesAsync();
+            
             return order;
         }
        

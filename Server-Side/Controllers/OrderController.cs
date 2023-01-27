@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Server_Side.Interface;
 using Server_Side.Model;
 using Server_Side.Model.Commands;
+using Server_Side.SignalRHubs;
 using System.Security.Claims;
 using System.Security.Cryptography.Xml;
 
@@ -14,12 +16,16 @@ namespace Server_Side.Controllers
     public class OrderController : ControllerBase
     {
         const string allUsers = "user,admin";
-        const string adminOnly = "admin";
         private readonly IOrdersRepository _repo;
-        public OrderController(IOrdersRepository repo)
+        private readonly IHubContext<OrdersHub> _hubContext;
+
+        public OrderController(IOrdersRepository repo, IHubContext<OrdersHub> hubContext)
         {
             _repo = repo;
+            _hubContext = hubContext;
         }
+      
+       
         [HttpGet("getorders/")]
         [AllowAnonymous]
         public async Task<List<Order>> GetOrdersAsync()
@@ -40,12 +46,15 @@ namespace Server_Side.Controllers
         
         [HttpPost("addOrder/")]
         [Authorize(Roles = allUsers)]
-        public ActionResult<Order> AddOrder(CreateOrderCommand command)
+        public ActionResult AddOrder(CreateOrderCommand command)
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             if (identity != null)
             {
-                return _repo.AddOrderAsync(command).Result;
+                //return _repo.AddOrderAsync(command);
+                var order = _repo.AddOrderAsync(command);
+                _hubContext.Clients.All.SendAsync("receiveOrder", order.Result);
+                return Ok();
             }
             return null;
 
@@ -59,20 +68,24 @@ namespace Server_Side.Controllers
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             if (identity != null)
             {
-                return Ok(_repo.UpdateOrderAsync(command).Result);
+                var order =  _repo.UpdateOrderAsync(command);
+                _hubContext.Clients.All.SendAsync("receiveEdit", order.Result);
+                return Ok();
             }
             return null;
         }
 
         [HttpDelete("deleteOrder/{orderId}")]
         [Authorize(Roles = allUsers)]
-        public ActionResult<Order> DestroyOrder(Guid orderId)
+        public ActionResult DestroyOrder(Guid orderId)
         {
 
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             if (identity != null)
             {
-                return _repo.DeleteOrderAsync(orderId).Result;
+                 var order =_repo.DeleteOrderAsync(orderId);
+                _hubContext.Clients.All.SendAsync("receiveDelete", order.Result);
+                return Ok();
             }
             return null;
 
