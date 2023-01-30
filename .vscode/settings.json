@@ -1,0 +1,5 @@
+{
+  "appService.preDeployTask": "publish-release",
+  "appService.deploySubpath": "Server-Side\\bin\\Release\\net6.0\\publish",
+  "appService.defaultWebAppToDeploy": "/subscriptions/ee2776cf-703d-4d8d-86f3-60522fec8810/AppServices/subscriptions/ee2776cf-703d-4d8d-86f3-60522fec8810/resourceGroups/internship/providers/Microsoft.Web/sites/logi-backend"
+}
